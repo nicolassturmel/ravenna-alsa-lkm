@@ -572,6 +572,7 @@ void ProcessT1(TClock_PTP* self, uint64_t ui64T1)
 {
     unsigned long flags;
 	uint64_t ui64DeltaT1 = ui64T1 - self->m_ui64T1;
+	MTAL_DP("Process sync");
 	if (ui64DeltaT1 == 0)
 	{
 		MTAL_DP("ui64DeltaT1 = %llu, current TIC period not proceed in order to prevent a 0 division !!\n", ui64DeltaT1);
@@ -635,8 +636,6 @@ void ProcessT1(TClock_PTP* self, uint64_t ui64T1)
 			//MTAL_DP("self->m_ui64T1 = %I64u\n", self->m_ui64T1);
 			//MTAL_DP("self->m_ui64T2 = %I64u\n", self->m_ui64T2);
 			///MTAL_DP("self->m_i64TIC_PTPToRTXClockOffset = %llu\n", self->m_i64TIC_PTPToRTXClockOffset);
-
-
 			////////////////////////////////////////
 			// Audio TIC
 
@@ -679,7 +678,8 @@ void ProcessT1(TClock_PTP* self, uint64_t ui64T1)
                 int32_t i32DeltaTICFrame = (int32_t)((self->m_ui64T2 - ui64LastTICFrameFraction) - self->m_ui64TIC_LastRTXClockTimeAtT2); // [100ns]
                 int64_t dProportional;
                 int64_t dPhaseAdj;
-
+				self->currentOffset = (abs(i32DeltaTICFrame) > abs(self->currentOffset)) ? i32DeltaTICFrame : self->currentOffset;
+				MTAL_DP("Offset: %d",i32DeltaTICFrame);
                 int32_t i32MidPeriod = (int32_t)(self->m_dTIC_BasePeriod / (PS_2_REF_UNIT * 2));
 
 				if (i32DeltaTICFrame > 3 * i32MidPeriod || i32DeltaTICFrame < -3 * i32MidPeriod)
@@ -1186,7 +1186,8 @@ void GetPTPStatus(TClock_PTP* self, TPTPStatus* pPTPStatus)
     memset(pPTPStatus, 0, sizeof(TPTPStatus));
     pPTPStatus->nPTPLockStatus = GetLockStatus(self);
     pPTPStatus->ui64GMID = self->m_ui64PTPMaster_GMID;
-    pPTPStatus->i32Jitter = 0; // TODO
+    pPTPStatus->i32Jitter = self->currentOffset * 100; 
+	self->currentOffset = 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

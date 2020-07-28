@@ -129,6 +129,8 @@ typedef struct
     uint64_t m_ui64PTPMaster_GMID;
     //######################################################
 
+    int32_t currentOffset;
+
 } TClock_PTP;
 
 
